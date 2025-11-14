@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+spring:
+  redis:
+    host: redis      # container name or hostname
+    port: 6379
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+logging:
+  level:
+    root: INFO

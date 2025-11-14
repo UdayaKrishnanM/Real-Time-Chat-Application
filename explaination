@@ -1,0 +1,53 @@
++--------------------------+
+|      Frontend UI         |
+|  chat.html (SockJS +     |
+|        STOMP JS)         |
++-----------+--------------+
+            |
+            | 1. WebSocket SEND (/app/chat.sendMessage)
+            v
++--------------------------+
+|   Spring Boot Backend    |
+|  ChatController.java     |
++-----------+--------------+
+            |
+            | 2. Publish message to Redis
+            v
++--------------------------+
+|   Redis Pub/Sub System   |
+| Topic: chat:messages     |
++-----------+--------------+
+            |
+            | 3. Deliver message to subscriber
+            v
++--------------------------+
+| RedisMessageSubscriber   |
+|  Broadcast to /topic/public
++-----------+--------------+
+            |
+            | 4. WebSocket PUSH
+            v
++--------------------------+
+|      Frontend UI         |
+| Updates chat window      |
++--------------------------+
+
+
+
+Client (Browser)                        Spring Boot                         Redis
+----------------                        -----------------                   ----------------
+  |                                          |                                  |
+  |--(1) Connect SockJS to /ws ------------->|                                  |
+  |--(2) STOMP CONNECT --------------------->|                                  |
+  |<-(3) CONNECTED---------------------------|                                  |
+  |                                          |                                  |
+  |--(4) SEND /app/chat.sendMessage--------->|                                  |
+  |                                          |--(5) Publisher.publish()-------->|
+  |                                          |   (chat:messages, JSON)          |
+  |                                          |                                  |
+  |                                          |<-(6) onMessage(JSON)-------------|
+  |                                          |   RedisMessageSubscriber          |
+  |                                          |                                  |
+  |<-(7) convertAndSend(/topic/public)-------|                                  |
+  |   (message pushed to subscribed users)   |                                  |
+  |                                          |                                  |

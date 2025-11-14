@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redis WebSocket Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+
+<div>
+    <input id="name" placeholder="Your Name">
+    <input id="message" placeholder="Message">
+    <button onclick="send()">Send</button>
+</div>
+
+<ul id="chat"></ul>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, () => {
+            console.log("CONNECTED TO BACKEND!");
+            stompClient.subscribe("/topic/public", msg => {
+                console.log("MESSAGE RECEIVED:", msg.body);
+
+                const data = JSON.parse(msg.body);
+                let li = document.createElement("li");
+                li.innerHTML = `<strong>${data.from}:</strong> ${data.text}`;
+                document.getElementById("chat").appendChild(li);
+            });
+        });
+    }
+
+    function send() {
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+            from: document.getElementById("name").value,
+            text: document.getElementById("message").value,
+            timestamp: new Date().toISOString()
+        }));
+    }
+
+    connect();
+</script>
+
+
+</body>
+</html>
